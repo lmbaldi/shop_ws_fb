@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shop/utils/app_routes.dart';
-import 'package:shop/providers/cart.dart';
-import 'package:shop/providers/product.dart';
+import '../providers/product.dart';
+import '../providers/cart.dart';
+import '../utils/app_routes.dart';
 
 class ProductGridItem extends StatelessWidget {
   @override
@@ -15,8 +15,10 @@ class ProductGridItem extends StatelessWidget {
       child: GridTile(
         child: GestureDetector(
           onTap: () {
-            Navigator.of(context)
-                .pushNamed(AppRoutes.PRODUCT_DETAIL, arguments: product);
+            Navigator.of(context).pushNamed(
+              AppRoutes.PRODUCT_DETAIL,
+              arguments: product,
+            );
           },
           child: Image.network(
             product.imageUrl,
@@ -44,16 +46,20 @@ class ProductGridItem extends StatelessWidget {
             color: Theme.of(context).accentColor,
             onPressed: () {
               Scaffold.of(context).hideCurrentSnackBar();
-              Scaffold.of(context).showSnackBar(SnackBar(
-                content: Text('Produto adicionado com sucesso!'),
-                duration: Duration(seconds: 2),
-                action: SnackBarAction(
-                  label: 'DESFAZER',
-                  onPressed: () {
-                    cart.removeSingleItem(product.id);
-                  }
+              Scaffold.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Produto adicionado com sucesso!',
+                  ),
+                  duration: Duration(seconds: 2),
+                  action: SnackBarAction(
+                    label: 'DESFAZER',
+                    onPressed: () {
+                      cart.removeSingleItem(product.id);
+                    },
+                  ),
                 ),
-              ));
+              );
               cart.addItem(product);
             },
           ),

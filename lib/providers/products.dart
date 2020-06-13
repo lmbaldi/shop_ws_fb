@@ -1,68 +1,115 @@
-import 'dart:math';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:shop/data/dummy_data.dart';
-import 'package:shop/providers/product.dart';
+import 'package:http/http.dart' as http;
+import 'package:shop_ws_fb/exceptions/http_exception.dart';
+import 'package:shop_ws_fb/utils/constants.dart';
+import './product.dart';
 
 class Products with ChangeNotifier {
-  List<Product> _items = DUMMY_PRODUCTS;
+  final String _baseUrl = '${Constants.BASE_API_URL}/products';
+  List<Product> _items = [];
 
   List<Product> get items => [..._items];
-
-  List<Product> get favoriteItems {
-    return _items.where((prod) => prod.isFavorite).toList();
-  }
 
   int get itemsCount {
     return _items.length;
   }
 
-  void addProduct(Product newProduct) {
+  List<Product> get favoriteItems {
+    return _items.where((prod) => prod.isFavorite).toList();
+  }
+
+  Future<void> loadProducts() async {
+    final response = await http.get("$_baseUrl.json");
+    Map<String, dynamic> data = json.decode(response.body);
+
+    _items.clear();
+    if (data != null) {
+      data.forEach((productId, productData) {
+        _items.add(Product(
+          id: productId,
+          title: productData['title'],
+          description: productData['description'],
+          price: productData['price'],
+          imageUrl: productData['imageUrl'],
+          isFavorite: productData['isFavorite'],
+        ));
+      });
+      notifyListeners();
+    }
+    return Future.value();
+  }
+
+  Future<void> addProduct(Product newProduct) async {
+    final response = await http.post(
+      "$_baseUrl.json",
+      body: json.encode({
+        'title': newProduct.title,
+        'description': newProduct.description,
+        'price': newProduct.price,
+        'imageUrl': newProduct.imageUrl,
+        'isFavorite': newProduct.isFavorite,
+      }),
+    );
+
     _items.add(Product(
-      id: Random().nextDouble().toString(),
+      id: json.decode(response.body)['name'],
       title: newProduct.title,
-      price: newProduct.price,
       description: newProduct.description,
+      price: newProduct.price,
       imageUrl: newProduct.imageUrl,
     ));
     notifyListeners();
   }
 
-  void updateProduct(Product product) {
+  Future<void> updateProduct(Product product) async {
     if (product == null || product.id == null) {
       return;
     }
+
     final index = _items.indexWhere((prod) => prod.id == product.id);
     if (index >= 0) {
+      await http.patch(
+        "$_baseUrl/${product.id}.json",
+        body: json.encode({
+          'title': product.title,
+          'description': product.description,
+          'price': product.price,
+          'imageUrl': product.imageUrl,
+        }),
+      );
       _items[index] = product;
       notifyListeners();
     }
   }
 
-  void deleteProduct(String id) {
+  Future<void> deleteProduct(String id) async {
     final index = _items.indexWhere((prod) => prod.id == id);
     if (index >= 0) {
-      _items.removeWhere((prod) => prod.id == id);
+      final product = _items[index];
+      _items.remove(product);
       notifyListeners();
+
+      final response = await http.delete("$_baseUrl/${product.id}.json");
+
+      if (response.statusCode >= 400) {
+        _items.insert(index, product);
+        notifyListeners();
+        throw HttpException('Ocorreu um erro na exclusão do produto.');
+      } 
     }
   }
 }
 
-// bool _showFavorieOnly = false;
+// bool _showFavoriteOnly = false;
 
-// List<Product> get items {
-//     if(_showFavorieOnly){
-//       return _items.where((prod) => prod.isFavorite).toList();
-//     }
-//     return [..._items];
-//   }
+// void showFavoriteOnly() {
+//   _showFavoriteOnly = true;
+//   notifyListeners();
 
-//   void showFavorieOnly(){
-//     _showFavorieOnly = true;
-//     notifyListeners();
-//   }
-
-//    void showAll(){
-//     _showFavorieOnly = false;
-//     notifyListeners();
-//   }
+// }
+// void showAll() {
+//   _showFavoriteOnly = false;
+//   notifyListeners();
+// }

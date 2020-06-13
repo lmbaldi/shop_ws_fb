@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shop/providers/cart.dart';
-import 'package:shop/providers/orders.dart';
-import 'package:shop/widgets/cart_item_widget.dart';
 
-class CartScrenn extends StatelessWidget {
+import '../widgets/cart_item_widget.dart';
+import '../providers/cart.dart';
+import '../providers/orders.dart';
+
+class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Cart cart = Provider.of(context);
@@ -27,12 +28,10 @@ class CartScrenn extends StatelessWidget {
                     'Total',
                     style: TextStyle(fontSize: 20),
                   ),
-                  SizedBox(
-                    width: 10,
-                  ),
+                  SizedBox(width: 10),
                   Chip(
                     label: Text(
-                      'R\$ ${cart.totalAmount}',
+                      'R\$${cart.totalAmount}',
                       style: TextStyle(
                         color: Theme.of(context).primaryTextTheme.title.color,
                       ),
@@ -40,22 +39,12 @@ class CartScrenn extends StatelessWidget {
                     backgroundColor: Theme.of(context).primaryColor,
                   ),
                   Spacer(),
-                  FlatButton(
-                    onPressed: () {
-                      Provider.of<Orders>(context, listen: false)
-                          .addOrder(cart);
-                      cart.clear();
-                    },
-                    child: Text('COMPRAR'),
-                    textColor: Theme.of(context).primaryColor,
-                  ),
+                  OrderButton(cart: cart),
                 ],
               ),
             ),
           ),
-          SizedBox(
-            height: 10,
-          ),
+          SizedBox(height: 10),
           Expanded(
             child: ListView.builder(
               itemCount: cart.itemsCount,
@@ -64,6 +53,44 @@ class CartScrenn extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class OrderButton extends StatefulWidget {
+  const OrderButton({
+    Key key,
+    @required this.cart,
+  }) : super(key: key);
+
+  final Cart cart;
+
+  @override
+  _OrderButtonState createState() => _OrderButtonState();
+}
+
+class _OrderButtonState extends State<OrderButton> {
+  bool _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return FlatButton(
+      child: _isLoading ? CircularProgressIndicator() : Text('COMPRAR'),
+      textColor: Theme.of(context).primaryColor,
+      onPressed: widget.cart.totalAmount == 0 ? null : () async {
+        setState(() {
+          _isLoading = true;
+        });
+        
+        await Provider.of<Orders>(context, listen: false)
+            .addOrder(widget.cart);
+        
+        setState(() {
+          _isLoading = false;
+        });
+
+        widget.cart.clear();
+      },
     );
   }
 }
