@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shop_ws_fb/exceptions/http_exception.dart';
+import 'package:shop/exceptions/http_exception.dart';
 
 import '../providers/product.dart';
 import '../providers/products.dart';
